@@ -1,4 +1,5 @@
 import { App, ExpressReceiver } from "@slack/bolt";
+import serverless from "serverless-http";
 import axios from "axios";
 import dotenv from "dotenv";
 
@@ -11,8 +12,7 @@ const receiver = new ExpressReceiver({
 
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
-  socketMode: true,
-  appToken: process.env.SLACK_APP_TOKEN,
+  signingSecret: process.env.SLACK_SIGNING_SECRET,
   receiver,
 });
 
@@ -182,7 +182,7 @@ app.command("/permissions", async ({ command, ack, respond, client, say }) => {
   }
 });
 
-module.exports = receiver.app;
+export default serverless(receiver.app);
 
 (async () => {
   await app.start(process.env.PORT ? parseInt(process.env.PORT) : 3000);

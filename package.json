@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node dist/api/index.js",
     "dev": "ts-node src/index.ts"
   },
   "keywords": [],
@@ -14,7 +14,8 @@
   "dependencies": {
     "@slack/bolt": "3.21.1",
     "axios": "1.7.7",
-    "dotenv": "16.4.5"
+    "dotenv": "16.4.5",
+    "serverless-http": "3.2.0"
   },
   "devDependencies": {
     "@types/node": "22.5.2",
