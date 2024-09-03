@@ -135,7 +135,7 @@ async function getUserGroups(username: string): Promise<string[] | null> {
         )}`
       );
     }
-    return null; // Return null instead of throwing
+    return null;
   }
 }
 
@@ -182,10 +182,5 @@ app.command("/permissions", async ({ command, ack, respond, client, say }) => {
   }
 });
 
+// Uncomment and use the serverless export
 export default serverless(receiver.app);
-
-(async () => {
-  await app.start(process.env.PORT ? parseInt(process.env.PORT) : 3000);
-  console.log("⚡️ Bolt app is running!");
-  console.log("Listening for 'permissions' commands...");
-})();
