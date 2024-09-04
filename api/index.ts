@@ -151,7 +151,7 @@ app.command("/permissions", async ({ command, ack, respond, client }) => {
       }
 
       // Check if loadingMessage.ts exists before updating
-      if (loadingMessage.ts) {
+      if (loadingMessage && loadingMessage.ts) {
         await client.chat.update({
           channel: command.channel_id,
           ts: loadingMessage.ts,
@@ -171,7 +171,7 @@ app.command("/permissions", async ({ command, ack, respond, client }) => {
 
       // Send error message, either by updating or sending a new message
       const errorMessage = "An error occurred while fetching user data.";
-      if (loadingMessage.ts) {
+      if (loadingMessage && loadingMessage.ts) {
         await client.chat.update({
           channel: command.channel_id,
           ts: loadingMessage.ts,
