@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2018",
     "module": "commonjs",
-    "outDir": "./api",
+    "outDir": "./dist",
     "rootDir": "./api",
     "strict": true,
     "esModuleInterop": true,

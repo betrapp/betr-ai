@@ -1,42 +1,15 @@
-import { App, ExpressReceiver } from "@slack/bolt";
-import { VercelRequest, VercelResponse } from "@vercel/node";
+import { App } from "@slack/bolt";
+import axios from "axios";
 import dotenv from "dotenv";
-import axios from "axios"; // Add this import
-import { Request, Response } from "express";
+import { VercelRequest, VercelResponse } from "@vercel/node";
 
 dotenv.config();
 
-console.log("Environment variables loaded");
-
-if (!process.env.SLACK_BOT_TOKEN) {
-  throw new Error("SLACK_BOT_TOKEN is not set");
-}
-
-if (!process.env.SLACK_SIGNING_SECRET) {
-  throw new Error("SLACK_SIGNING_SECRET is not set");
-}
-
-console.log("SLACK_BOT_TOKEN is set:", !!process.env.SLACK_BOT_TOKEN);
-console.log(
-  "SLACK_BOT_TOKEN prefix:",
-  process.env.SLACK_BOT_TOKEN?.substring(0, 5)
-);
-
-const receiver = new ExpressReceiver({
-  signingSecret: process.env.SLACK_SIGNING_SECRET,
-  processBeforeResponse: true,
-});
-
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
-  receiver,
-});
-
-console.log("Slack App created");
-
-// Error handler
-app.error(async (error) => {
-  console.error("An error occurred:", error);
+  signingSecret: process.env.SLACK_SIGNING_SECRET,
+  socketMode: true,
+  appToken: process.env.SLACK_APP_TOKEN,
 });
 
 interface AuthResponse {
@@ -69,12 +42,10 @@ let tokenExpiration: number | null = null;
 
 async function getAuthToken(): Promise<string> {
   if (authToken && tokenExpiration && tokenExpiration > Date.now()) {
-    console.log("Debug: Using cached token");
     return authToken;
   }
 
   try {
-    console.log("Debug: Requesting new auth token");
     const response = await axios.post<AuthResponse>(
       `${process.env.API_BASE_URL}/auth/get-token/`,
       {
@@ -89,11 +60,9 @@ async function getAuthToken(): Promise<string> {
       }
     );
 
-    console.log("Debug: Auth response status:", response.status);
-    console.log(
-      "Debug: Auth response data:",
-      JSON.stringify(response.data, null, 2)
-    );
+    if (!response.data.data.token) {
+      throw new Error("Token not received in the response");
+    }
 
     authToken = response.data.data.token;
     tokenExpiration = Date.now() + response.data.data.expires_in * 1000;
@@ -101,43 +70,34 @@ async function getAuthToken(): Promise<string> {
   } catch (error) {
     console.error("Error getting auth token:", error);
     if (axios.isAxiosError(error)) {
-      console.error(
-        "Debug: Auth error response:",
-        JSON.stringify(error.response?.data, null, 2)
-      );
+      console.error("Response data:", error.response?.data);
+      console.error("Response status:", error.response?.status);
     }
-    throw error;
+    throw new Error(
+      `Failed to get auth token: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
   }
 }
 
 async function getUserGroups(username: string): Promise<string[] | null> {
   try {
     const token = await getAuthToken();
-    console.log(`Debug: Token received:`, token);
-
-    if (!token) {
-      console.error("Debug: No auth token received");
-      return null;
-    }
-
-    const url = `${process.env.API_BASE_URL}/admin/users`;
-    console.log(`Debug: Requesting URL: ${url}`);
-
-    const response = await axios.get<UsersResponse>(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-    });
-
-    console.log(`Debug: Response status: ${response.status}`);
-    console.log(
-      `Debug: Response data: ${JSON.stringify(response.data, null, 2)}`
+    console.log("Token:", token);
+    const response = await axios.get<UsersResponse>(
+      `${process.env.API_BASE_URL}/admin/users`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      }
     );
-
-    const userData = response.data.data;
-    const user = userData[username];
+    // console.log("Response:", response.data);
+    const user = response.data.data[username];
+    console.log("User:", user);
     if (user) {
       return user.groups;
     } else {
@@ -145,55 +105,69 @@ async function getUserGroups(username: string): Promise<string[] | null> {
     }
   } catch (error) {
     console.error("Error fetching user data:", error);
-    if (axios.isAxiosError(error)) {
-      console.error(
-        `Debug: Error response: ${JSON.stringify(
-          error.response?.data,
-          null,
-          2
-        )}`
-      );
-    }
-    return null;
+    throw error;
   }
 }
 
-app.command("/permissions", async ({ command, ack, respond }) => {
-  console.log("Received /permissions command");
+app.command("/permissions", async ({ command, ack, respond, client }) => {
   await ack();
+  const username = command.text.trim();
+
+  // Send initial loading message
+  const loadingMessage = await respond({
+    text: `:hourglass: Fetching permissions for *${username}*...`,
+    response_type: "ephemeral",
+  });
+
   try {
-    // Your command logic here
-    await respond("Command processed successfully");
+    const groups = await getUserGroups(username);
+
+    let resultMessage;
+    if (groups && groups.length > 0) {
+      resultMessage = `User *${username}* belongs to the following groups:\n\`\`\`\n${groups.join(
+        "\n"
+      )}\n\`\`\``;
+    } else if (groups && groups.length === 0) {
+      resultMessage = `User *${username}* doesn't belong to any groups.`;
+    } else {
+      resultMessage = `User *${username}* not found.`;
+    }
+
+    // Check if loadingMessage.ts exists before updating
+    if (loadingMessage.ts) {
+      await client.chat.update({
+        channel: command.channel_id,
+        ts: loadingMessage.ts,
+        text: resultMessage,
+      });
+    } else {
+      // If ts is not available, send a new message
+      await respond({
+        text: resultMessage,
+        response_type: "ephemeral",
+      });
+    }
   } catch (error) {
-    console.error("Error processing command:", error);
-    await respond("An error occurred while processing the command");
+    console.error("Error in /permissions command:", error);
+
+    // Send error message, either by updating or sending a new message
+    const errorMessage = "An error occurred while fetching user data.";
+    if (loadingMessage.ts) {
+      await client.chat.update({
+        channel: command.channel_id,
+        ts: loadingMessage.ts,
+        text: errorMessage,
+      });
+    } else {
+      await respond({
+        text: errorMessage,
+        response_type: "ephemeral",
+      });
+    }
   }
 });
 
-// Export the serverless function
-export default async (req: VercelRequest, res: VercelResponse) => {
-  console.log("Received request:", req.method, req.url);
-  try {
-    console.log("Handling request with receiver...");
-    await receiver.requestHandler(
-      req as unknown as Request,
-      adaptVercelResponse(res)
-    );
-    console.log("Request handled successfully");
-  } catch (error) {
-    console.error("Error handling request:", error);
-    if (error instanceof Error) {
-      console.error("Error message:", error.message);
-      console.error("Error stack:", error.stack);
-    }
-    res.status(500).json({
-      error: "Internal Server Error",
-      message:
-        error instanceof Error ? error.message : "Unknown error occurred",
-    });
-  }
-};
-
-function adaptVercelResponse(res: VercelResponse): Response {
-  return res as unknown as Response;
-}
+// (async () => {
+//   await app.start(process.env.PORT ? parseInt(process.env.PORT) : 3000);
+//   console.log("⚡️ Bolt app is running!");
+// })();
