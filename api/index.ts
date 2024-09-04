@@ -115,10 +115,12 @@ async function getUserGroups(username: string): Promise<string[] | null> {
 app.command("/permissions", async ({ command, ack, respond, client }) => {
   // Acknowledge the command immediately
   await ack();
+  console.log("Acknowledged command");
 
   // Perform the longer processing asynchronously
   (async () => {
     const username = command.text.trim();
+    console.log(`Processing command for username: ${username}`);
 
     // Send initial loading message
     let loadingMessage;
@@ -127,6 +129,7 @@ app.command("/permissions", async ({ command, ack, respond, client }) => {
         text: `:hourglass: Fetching permissions for *${username}*...`,
         response_type: "ephemeral",
       });
+      console.log("Sent initial loading message");
     } catch (error) {
       console.error("Error sending initial loading message:", error);
       return;
@@ -134,6 +137,7 @@ app.command("/permissions", async ({ command, ack, respond, client }) => {
 
     try {
       const groups = await getUserGroups(username);
+      console.log("Fetched user groups:", groups);
 
       let resultMessage;
       if (groups && groups.length > 0) {
@@ -153,12 +157,14 @@ app.command("/permissions", async ({ command, ack, respond, client }) => {
           ts: loadingMessage.ts,
           text: resultMessage,
         });
+        console.log("Updated loading message with result");
       } else {
         // If ts is not available, send a new message
         await respond({
           text: resultMessage,
           response_type: "ephemeral",
         });
+        console.log("Sent result message");
       }
     } catch (error) {
       console.error("Error in /permissions command:", error);
@@ -171,11 +177,13 @@ app.command("/permissions", async ({ command, ack, respond, client }) => {
           ts: loadingMessage.ts,
           text: errorMessage,
         });
+        console.log("Updated loading message with error");
       } else {
         await respond({
           text: errorMessage,
           response_type: "ephemeral",
         });
+        console.log("Sent error message");
       }
     }
   })();
