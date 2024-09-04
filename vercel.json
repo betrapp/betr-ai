@@ -1,7 +1,7 @@
 {
   "version": 2,
   "functions": {
-    "api/index.ts": {
+    "api/*.ts": {
       "runtime": "@vercel/node@2.0.0"
     }
   },
@@ -10,5 +10,6 @@
       "src": "/(.*)",
       "dest": "/api/index.ts"
     }
-  ]
+  ],
+  "outputDirectory": "api"
 }
