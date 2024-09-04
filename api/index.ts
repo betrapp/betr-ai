@@ -1,14 +1,19 @@
-import { App } from "@slack/bolt";
+import { App, ExpressReceiver } from "@slack/bolt";
 import axios from "axios";
 import dotenv from "dotenv";
 import { VercelRequest, VercelResponse } from "@vercel/node";
 
 dotenv.config();
 
+const receiver = new ExpressReceiver({
+  signingSecret: process.env.SLACK_SIGNING_SECRET!,
+  processBeforeResponse: true,
+});
+
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
   signingSecret: process.env.SLACK_SIGNING_SECRET,
-  socketMode: true,
+  socketMode: false,
   appToken: process.env.SLACK_APP_TOKEN,
 });
 
@@ -175,11 +180,26 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     return;
   }
 
-  res.status(405).send("Method Not Allowed");
-};
+  // Handle Slack URL verification challenge
+  if (req.body && req.body.type === "url_verification") {
+    res.status(200).json({ challenge: req.body.challenge });
+    return;
+  }
 
-// Start the app (this is necessary for socket mode)
-(async () => {
-  await app.start();
-  console.log("⚡️ Bolt app is running!");
-})();
+  try {
+    console.log("Handling request with receiver...");
+    await receiver.requestHandler(req as any, res as any);
+    console.log("Request handled successfully");
+  } catch (error) {
+    console.error("Error handling request:", error);
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
+    res.status(500).json({
+      error: "Internal Server Error",
+      message:
+        error instanceof Error ? error.message : "Unknown error occurred",
+    });
+  }
+};
