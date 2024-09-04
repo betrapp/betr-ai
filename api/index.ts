@@ -1,13 +1,19 @@
-import { App } from "@slack/bolt";
+import { App, ExpressReceiver } from "@slack/bolt";
 import axios from "axios";
 import dotenv from "dotenv";
 import { VercelRequest, VercelResponse } from "@vercel/node";
 
 dotenv.config();
 
+const receiver = new ExpressReceiver({
+  signingSecret: process.env.SLACK_SIGNING_SECRET!,
+  processBeforeResponse: true,
+});
+
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
   signingSecret: process.env.SLACK_SIGNING_SECRET,
+  receiver,
   socketMode: true,
   appToken: process.env.SLACK_APP_TOKEN,
 });
@@ -166,6 +172,32 @@ app.command("/permissions", async ({ command, ack, respond, client }) => {
     }
   }
 });
+
+// Export the serverless function
+export default async (req: VercelRequest, res: VercelResponse) => {
+  console.log("Received request:", req.method, req.url);
+  if (req.method === "GET") {
+    res.status(200).send("Server is running");
+    return;
+  }
+
+  try {
+    console.log("Handling request with receiver...");
+    await receiver.requestHandler(req as any, res as any);
+    console.log("Request handled successfully");
+  } catch (error) {
+    console.error("Error handling request:", error);
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
+    res.status(500).json({
+      error: "Internal Server Error",
+      message:
+        error instanceof Error ? error.message : "Unknown error occurred",
+    });
+  }
+};
 
 // (async () => {
 //   await app.start(process.env.PORT ? parseInt(process.env.PORT) : 3000);
