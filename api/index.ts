@@ -13,8 +13,7 @@ const receiver = new ExpressReceiver({
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
   signingSecret: process.env.SLACK_SIGNING_SECRET,
-  socketMode: false,
-  appToken: process.env.SLACK_APP_TOKEN,
+  receiver,
 });
 
 interface AuthResponse {
@@ -100,7 +99,6 @@ async function getUserGroups(username: string): Promise<string[] | null> {
         },
       }
     );
-    // console.log("Response:", response.data);
     const user = response.data.data[username];
     console.log("User:", user);
     if (user) {
@@ -115,61 +113,72 @@ async function getUserGroups(username: string): Promise<string[] | null> {
 }
 
 app.command("/permissions", async ({ command, ack, respond, client }) => {
+  // Acknowledge the command immediately
   await ack();
-  const username = command.text.trim();
 
-  // Send initial loading message
-  const loadingMessage = await respond({
-    text: `:hourglass: Fetching permissions for *${username}*...`,
-    response_type: "ephemeral",
-  });
+  // Perform the longer processing asynchronously
+  (async () => {
+    const username = command.text.trim();
 
-  try {
-    const groups = await getUserGroups(username);
-
-    let resultMessage;
-    if (groups && groups.length > 0) {
-      resultMessage = `User *${username}* belongs to the following groups:\n\`\`\`\n${groups.join(
-        "\n"
-      )}\n\`\`\``;
-    } else if (groups && groups.length === 0) {
-      resultMessage = `User *${username}* doesn't belong to any groups.`;
-    } else {
-      resultMessage = `User *${username}* not found.`;
-    }
-
-    // Check if loadingMessage.ts exists before updating
-    if (loadingMessage.ts) {
-      await client.chat.update({
-        channel: command.channel_id,
-        ts: loadingMessage.ts,
-        text: resultMessage,
-      });
-    } else {
-      // If ts is not available, send a new message
-      await respond({
-        text: resultMessage,
+    // Send initial loading message
+    let loadingMessage;
+    try {
+      loadingMessage = await respond({
+        text: `:hourglass: Fetching permissions for *${username}*...`,
         response_type: "ephemeral",
       });
+    } catch (error) {
+      console.error("Error sending initial loading message:", error);
+      return;
     }
-  } catch (error) {
-    console.error("Error in /permissions command:", error);
 
-    // Send error message, either by updating or sending a new message
-    const errorMessage = "An error occurred while fetching user data.";
-    if (loadingMessage.ts) {
-      await client.chat.update({
-        channel: command.channel_id,
-        ts: loadingMessage.ts,
-        text: errorMessage,
-      });
-    } else {
-      await respond({
-        text: errorMessage,
-        response_type: "ephemeral",
-      });
+    try {
+      const groups = await getUserGroups(username);
+
+      let resultMessage;
+      if (groups && groups.length > 0) {
+        resultMessage = `User *${username}* belongs to the following groups:\n\`\`\`\n${groups.join(
+          "\n"
+        )}\n\`\`\``;
+      } else if (groups && groups.length === 0) {
+        resultMessage = `User *${username}* doesn't belong to any groups.`;
+      } else {
+        resultMessage = `User *${username}* not found.`;
+      }
+
+      // Check if loadingMessage.ts exists before updating
+      if (loadingMessage.ts) {
+        await client.chat.update({
+          channel: command.channel_id,
+          ts: loadingMessage.ts,
+          text: resultMessage,
+        });
+      } else {
+        // If ts is not available, send a new message
+        await respond({
+          text: resultMessage,
+          response_type: "ephemeral",
+        });
+      }
+    } catch (error) {
+      console.error("Error in /permissions command:", error);
+
+      // Send error message, either by updating or sending a new message
+      const errorMessage = "An error occurred while fetching user data.";
+      if (loadingMessage.ts) {
+        await client.chat.update({
+          channel: command.channel_id,
+          ts: loadingMessage.ts,
+          text: errorMessage,
+        });
+      } else {
+        await respond({
+          text: errorMessage,
+          response_type: "ephemeral",
+        });
+      }
     }
-  }
+  })();
 });
 
 // Export the serverless function
