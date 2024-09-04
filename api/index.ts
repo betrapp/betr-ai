@@ -1,7 +1,9 @@
 import { App, ExpressReceiver } from "@slack/bolt";
-import serverless from "serverless-http";
+import { VercelRequest, VercelResponse } from "@vercel/node";
 import axios from "axios";
 import dotenv from "dotenv";
+import { Request } from "express";
+import { Response } from "express";
 
 dotenv.config();
 
@@ -185,4 +187,20 @@ async function processPermissionsRequest(username: string, respond: Function) {
   }
 }
 
-export default serverless(receiver.app);
+function adaptRequest(req: VercelRequest): Request {
+  return req as unknown as Request;
+}
+
+function adaptResponse(res: VercelResponse): Response {
+  return res as unknown as Response;
+}
+
+export default async (req: VercelRequest, res: VercelResponse) => {
+  try {
+    await app.start();
+    await receiver.requestHandler(adaptRequest(req), adaptResponse(res));
+  } catch (error) {
+    console.error("Error handling request:", error);
+    res.status(500).send("Internal Server Error");
+  }
+};
