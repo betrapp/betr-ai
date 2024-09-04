@@ -196,7 +196,7 @@ function adaptResponse(res: VercelResponse): Response {
 
 export default async (req: VercelRequest, res: VercelResponse) => {
   try {
-    await app.start();
+    // await app.start();
     await receiver.requestHandler(adaptRequest(req), adaptResponse(res));
   } catch (error) {
     console.error("Error handling request:", error);
