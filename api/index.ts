@@ -129,7 +129,7 @@ app.command("/permissions", async ({ command, ack, respond, client }) => {
         text: `:hourglass: Fetching permissions for *${username}*...`,
         response_type: "ephemeral",
       });
-      console.log("Sent initial loading message");
+      console.log("Sent initial loading message:", loadingMessage);
     } catch (error) {
       console.error("Error sending initial loading message:", error);
       return;
@@ -153,26 +153,28 @@ app.command("/permissions", async ({ command, ack, respond, client }) => {
       // Check if loadingMessage.ts exists before updating
       if (loadingMessage && loadingMessage.ts) {
         try {
-          await client.chat.update({
+          const updateResult = await client.chat.update({
             channel: command.channel_id,
             ts: loadingMessage.ts,
             text: resultMessage,
           });
-          console.log("Updated loading message with result");
+          console.log("Updated loading message with result:", updateResult);
         } catch (error) {
           console.error("Error updating loading message:", error);
-        }
-      } else {
-        // If ts is not available, send a new message
-        try {
+          // Fallback to sending a new message
           await respond({
             text: resultMessage,
             response_type: "ephemeral",
           });
-          console.log("Sent result message");
-        } catch (error) {
-          console.error("Error sending result message:", error);
+          console.log("Sent result message as fallback");
         }
+      } else {
+        // If ts is not available, send a new message
+        const responseResult = await respond({
+          text: resultMessage,
+          response_type: "ephemeral",
+        });
+        console.log("Sent result message:", responseResult);
       }
     } catch (error) {
       console.error("Error in /permissions command:", error);
@@ -181,25 +183,27 @@ app.command("/permissions", async ({ command, ack, respond, client }) => {
       const errorMessage = "An error occurred while fetching user data.";
       if (loadingMessage && loadingMessage.ts) {
         try {
-          await client.chat.update({
+          const updateResult = await client.chat.update({
             channel: command.channel_id,
             ts: loadingMessage.ts,
             text: errorMessage,
           });
-          console.log("Updated loading message with error");
+          console.log("Updated loading message with error:", updateResult);
         } catch (error) {
           console.error("Error updating loading message with error:", error);
-        }
-      } else {
-        try {
+          // Fallback to sending a new message
           await respond({
             text: errorMessage,
             response_type: "ephemeral",
           });
-          console.log("Sent error message");
-        } catch (error) {
-          console.error("Error sending error message:", error);
+          console.log("Sent error message as fallback");
         }
+      } else {
+        const responseResult = await respond({
+          text: errorMessage,
+          response_type: "ephemeral",
+        });
+        console.log("Sent error message:", responseResult);
       }
     }
   })();
