@@ -213,7 +213,7 @@ function adaptResponse(res: VercelResponse): Response {
 
 export default async (req: VercelRequest, res: VercelResponse) => {
   try {
-    await app.start();
+    // await app.start();
     console.log("Slack app started");
     // Use the receiver directly
     await receiver.requestHandler(adaptRequest(req), adaptResponse(res));
