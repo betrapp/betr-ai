@@ -113,71 +113,54 @@ async function getUserGroups(username: string): Promise<string[] | null> {
 }
 
 app.command("/permissions", async ({ command, ack, respond, client }) => {
+  // Acknowledge the command immediately
   await ack();
   console.log("Acknowledged command");
 
-  // Send initial loading message
-  const loadingMessage = await respond({
-    text: ":hourglass: Fetching permissions... This may take a moment.",
-    response_type: "ephemeral",
+  // Send the initial response to avoid the timeout error
+  await respond({
+    response_type: 'in_channel',
+    text: 'Processing your request...',
   });
-  console.log("Sent loading message");
 
-  const username = command.text.trim();
-  console.log(`Processing command for username: ${username}`);
+  // Perform the longer processing asynchronously
+  (async () => {
+    const username = command.text.trim();
+    console.log(`Processing command for username: ${username}`);
 
-  try {
-    const groups = await getUserGroups(username);
-    console.log("Fetched user groups:", groups);
+    try {
+      const groups = await getUserGroups(username);
+      console.log("Fetched user groups:", groups);
 
-    let resultMessage;
-    if (groups && groups.length > 0) {
-      resultMessage = `User *${username}* belongs to the following groups:\n\`\`\`\n${groups.join(
-        "\n"
-      )}\n\`\`\``;
-    } else if (groups && groups.length === 0) {
-      resultMessage = `User *${username}* doesn't belong to any groups.`;
-    } else {
-      resultMessage = `User *${username}* not found.`;
-    }
+      let resultMessage;
+      if (groups && groups.length > 0) {
+        resultMessage = `User *${username}* belongs to the following groups:\n\`\`\`\n${groups.join("\n")}\n\`\`\``;
+      } else if (groups && groups.length === 0) {
+        resultMessage = `User *${username}* doesn't belong to any groups.`;
+      } else {
+        resultMessage = `User *${username}* not found.`;
+      }
 
-    // Update the loading message with the result
-    if (loadingMessage && loadingMessage.ts) {
-      await client.chat.update({
+      // Send the result as a new message
+      await client.chat.postMessage({
         channel: command.channel_id,
-        ts: loadingMessage.ts,
         text: resultMessage,
+        thread_ts: command.ts, // This will post the message in a thread
       });
-      console.log("Updated message with result");
-    } else {
-      // Fallback to sending a new message if update fails
-      await respond({
-        text: resultMessage,
-        response_type: "ephemeral",
-      });
-      console.log("Sent result as new message");
-    }
-  } catch (error) {
-    console.error("Error in /permissions command:", error);
-    const errorMessage = "An error occurred while fetching user data.";
-    
-    // Update the loading message with the error
-    if (loadingMessage && loadingMessage.ts) {
-      await client.chat.update({
+      console.log("Sent result message");
+    } catch (error) {
+      console.error("Error in /permissions command:", error);
+      const errorMessage = "An error occurred while fetching user data.";
+      
+      // Send the error as a new message
+      await client.chat.postMessage({
         channel: command.channel_id,
-        ts: loadingMessage.ts,
         text: errorMessage,
+        thread_ts: command.ts, // This will post the message in a thread
       });
-      console.log("Updated message with error");
-    } else {
-      // Fallback to sending a new error message
-      await respond({
-        text: errorMessage,
-        response_type: "ephemeral",
-      });
-      console.log("Sent error as new message");
+      console.log("Sent error message");
     }
-  }
+  })();
 });
 
 // Export the serverless function
