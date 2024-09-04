@@ -152,19 +152,27 @@ app.command("/permissions", async ({ command, ack, respond, client }) => {
 
       // Check if loadingMessage.ts exists before updating
       if (loadingMessage && loadingMessage.ts) {
-        await client.chat.update({
-          channel: command.channel_id,
-          ts: loadingMessage.ts,
-          text: resultMessage,
-        });
-        console.log("Updated loading message with result");
+        try {
+          await client.chat.update({
+            channel: command.channel_id,
+            ts: loadingMessage.ts,
+            text: resultMessage,
+          });
+          console.log("Updated loading message with result");
+        } catch (error) {
+          console.error("Error updating loading message:", error);
+        }
       } else {
         // If ts is not available, send a new message
-        await respond({
-          text: resultMessage,
-          response_type: "ephemeral",
-        });
-        console.log("Sent result message");
+        try {
+          await respond({
+            text: resultMessage,
+            response_type: "ephemeral",
+          });
+          console.log("Sent result message");
+        } catch (error) {
+          console.error("Error sending result message:", error);
+        }
       }
     } catch (error) {
       console.error("Error in /permissions command:", error);
@@ -172,18 +180,26 @@ app.command("/permissions", async ({ command, ack, respond, client }) => {
       // Send error message, either by updating or sending a new message
       const errorMessage = "An error occurred while fetching user data.";
       if (loadingMessage && loadingMessage.ts) {
-        await client.chat.update({
-          channel: command.channel_id,
-          ts: loadingMessage.ts,
-          text: errorMessage,
-        });
-        console.log("Updated loading message with error");
+        try {
+          await client.chat.update({
+            channel: command.channel_id,
+            ts: loadingMessage.ts,
+            text: errorMessage,
+          });
+          console.log("Updated loading message with error");
+        } catch (error) {
+          console.error("Error updating loading message with error:", error);
+        }
       } else {
-        await respond({
-          text: errorMessage,
-          response_type: "ephemeral",
-        });
-        console.log("Sent error message");
+        try {
+          await respond({
+            text: errorMessage,
+            response_type: "ephemeral",
+          });
+          console.log("Sent error message");
+        } catch (error) {
+          console.error("Error sending error message:", error);
+        }
       }
     }
   })();
