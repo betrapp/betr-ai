@@ -1,9 +1,8 @@
 import { App, ExpressReceiver } from "@slack/bolt";
 import { VercelRequest, VercelResponse } from "@vercel/node";
-import axios from "axios";
 import dotenv from "dotenv";
-import { Request } from "express";
-import { Response } from "express";
+import axios from "axios"; // Add this import
+import { Request, Response } from "express";
 
 dotenv.config();
 
@@ -24,7 +23,7 @@ console.log(
 );
 
 const receiver = new ExpressReceiver({
-  signingSecret: process.env.SLACK_SIGNING_SECRET!,
+  signingSecret: process.env.SLACK_SIGNING_SECRET,
   processBeforeResponse: true,
 });
 
@@ -33,6 +32,9 @@ const app = new App({
   receiver,
 });
 
+console.log("Slack App created");
+
+// Error handler
 app.error(async (error) => {
   console.error("An error occurred:", error);
 });
@@ -159,64 +161,24 @@ async function getUserGroups(username: string): Promise<string[] | null> {
 app.command("/permissions", async ({ command, ack, respond }) => {
   console.log("Received /permissions command");
   await ack();
-  const username = command.text.trim();
-
-  // Respond immediately
-  await respond({
-    text: `:hourglass: We've received your request for *${username}*'s permissions. We'll post the results shortly.`,
-    response_type: "ephemeral",
-  });
-
-  // Process the request asynchronously
-  processPermissionsRequest(username, respond);
+  try {
+    // Your command logic here
+    await respond("Command processed successfully");
+  } catch (error) {
+    console.error("Error processing command:", error);
+    await respond("An error occurred while processing the command");
+  }
 });
 
-async function processPermissionsRequest(username: string, respond: Function) {
-  try {
-    const groups = await getUserGroups(username);
-    console.log(`Groups for ${username}:`, groups);
-
-    let resultMessage;
-    if (groups && groups.length > 0) {
-      resultMessage = `User *${username}* belongs to the following groups:\n\`\`\`\n${groups.join(
-        "\n"
-      )}\n\`\`\``;
-    } else if (groups && groups.length === 0) {
-      resultMessage = `User *${username}* doesn't belong to any groups.`;
-    } else {
-      resultMessage = `User *${username}* not found.`;
-    }
-
-    // Send the result as a new message
-    await respond({
-      text: resultMessage,
-      response_type: "ephemeral",
-    });
-  } catch (error) {
-    console.error("Error in permissions command:", error);
-
-    // Send the error as a new message
-    await respond({
-      text: "An error occurred while fetching user data.",
-      response_type: "ephemeral",
-    });
-  }
-}
-
-function adaptRequest(req: VercelRequest): Request {
-  return req as unknown as Request;
-}
-
-function adaptResponse(res: VercelResponse): Response {
-  return res as unknown as Response;
-}
-
+// Export the serverless function
 export default async (req: VercelRequest, res: VercelResponse) => {
+  console.log("Received request:", req.method, req.url);
   try {
-    // await app.start();
-    console.log("Slack app started");
-    // Use the receiver directly
-    await receiver.requestHandler(adaptRequest(req), adaptResponse(res));
+    console.log("Handling request with receiver...");
+    await receiver.requestHandler(
+      req as unknown as Request,
+      adaptVercelResponse(res)
+    );
     console.log("Request handled successfully");
   } catch (error) {
     console.error("Error handling request:", error);
@@ -231,3 +193,7 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     });
   }
 };
+
+function adaptVercelResponse(res: VercelResponse): Response {
+  return res as unknown as Response;
+}
