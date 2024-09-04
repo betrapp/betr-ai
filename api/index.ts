@@ -139,18 +139,21 @@ async function getUserGroups(username: string): Promise<string[] | null> {
   }
 }
 
-app.command("/permissions", async ({ command, ack, respond, client, say }) => {
+app.command("/permissions", async ({ command, ack, respond }) => {
   await ack();
-  console.log("Permissions command triggered");
   const username = command.text.trim();
-  console.log(`Requested permissions for username: ${username}`);
 
-  // Send initial loading message
+  // Respond immediately
   await respond({
-    text: `:hourglass: Fetching permissions for *${username}*...`,
+    text: `:hourglass: We've received your request for *${username}*'s permissions. We'll post the results shortly.`,
     response_type: "ephemeral",
   });
 
+  // Process the request asynchronously
+  processPermissionsRequest(username, respond);
+});
+
+async function processPermissionsRequest(username: string, respond: Function) {
   try {
     const groups = await getUserGroups(username);
     console.log(`Groups for ${username}:`, groups);
@@ -180,7 +183,6 @@ app.command("/permissions", async ({ command, ack, respond, client, say }) => {
       response_type: "ephemeral",
     });
   }
-});
+}
 
-// Uncomment and use the serverless export
 export default serverless(receiver.app);
