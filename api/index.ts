@@ -113,100 +113,40 @@ async function getUserGroups(username: string): Promise<string[] | null> {
 }
 
 app.command("/permissions", async ({ command, ack, respond, client }) => {
-  // Acknowledge the command immediately
   await ack();
   console.log("Acknowledged command");
 
-  // Perform the longer processing asynchronously
-  (async () => {
-    const username = command.text.trim();
-    console.log(`Processing command for username: ${username}`);
+  const username = command.text.trim();
+  console.log(`Processing command for username: ${username}`);
 
-    // Send initial loading message
-    let loadingMessage;
-    try {
-      loadingMessage = await respond({
-        text: `:hourglass: Fetching permissions for *${username}*...`,
-        response_type: "ephemeral",
-      });
-      console.log("Sent initial loading message:", loadingMessage);
-    } catch (error) {
-      console.error("Error sending initial loading message:", error);
-      return;
+  try {
+    const groups = await getUserGroups(username);
+    console.log("Fetched user groups:", groups);
+
+    let resultMessage;
+    if (groups && groups.length > 0) {
+      resultMessage = `User *${username}* belongs to the following groups:\n\`\`\`\n${groups.join(
+        "\n"
+      )}\n\`\`\``;
+    } else if (groups && groups.length === 0) {
+      resultMessage = `User *${username}* doesn't belong to any groups.`;
+    } else {
+      resultMessage = `User *${username}* not found.`;
     }
 
-    try {
-      const groups = await getUserGroups(username);
-      console.log("Fetched user groups:", groups);
-
-      let resultMessage;
-      if (groups && groups.length > 0) {
-        resultMessage = `User *${username}* belongs to the following groups:\n\`\`\`\n${groups.join(
-          "\n"
-        )}\n\`\`\``;
-      } else if (groups && groups.length === 0) {
-        resultMessage = `User *${username}* doesn't belong to any groups.`;
-      } else {
-        resultMessage = `User *${username}* not found.`;
-      }
-
-      // Check if loadingMessage.ts exists before updating
-      if (loadingMessage && loadingMessage.ts) {
-        try {
-          const updateResult = await client.chat.update({
-            channel: command.channel_id,
-            ts: loadingMessage.ts,
-            text: resultMessage,
-          });
-          console.log("Updated loading message with result:", updateResult);
-        } catch (error) {
-          console.error("Error updating loading message:", error);
-          // Fallback to sending a new message
-          await respond({
-            text: resultMessage,
-            response_type: "ephemeral",
-          });
-          console.log("Sent result message as fallback");
-        }
-      } else {
-        // If ts is not available, send a new message
-        const responseResult = await respond({
-          text: resultMessage,
-          response_type: "ephemeral",
-        });
-        console.log("Sent result message:", responseResult);
-      }
-    } catch (error) {
-      console.error("Error in /permissions command:", error);
-
-      // Send error message, either by updating or sending a new message
-      const errorMessage = "An error occurred while fetching user data.";
-      if (loadingMessage && loadingMessage.ts) {
-        try {
-          const updateResult = await client.chat.update({
-            channel: command.channel_id,
-            ts: loadingMessage.ts,
-            text: errorMessage,
-          });
-          console.log("Updated loading message with error:", updateResult);
-        } catch (error) {
-          console.error("Error updating loading message with error:", error);
-          // Fallback to sending a new message
-          await respond({
-            text: errorMessage,
-            response_type: "ephemeral",
-          });
-          console.log("Sent error message as fallback");
-        }
-      } else {
-        const responseResult = await respond({
-          text: errorMessage,
-          response_type: "ephemeral",
-        });
-        console.log("Sent error message:", responseResult);
-      }
-    }
-  })();
+    await respond({
+      text: resultMessage,
+      response_type: "ephemeral",
+    });
+    console.log("Sent result message");
+  } catch (error) {
+    console.error("Error in /permissions command:", error);
+    await respond({
+      text: "An error occurred while fetching user data.",
+      response_type: "ephemeral",
+    });
+    console.log("Sent error message");
+  }
 });
 
 // Export the serverless function
@@ -229,14 +169,9 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     console.log("Request handled successfully");
   } catch (error) {
     console.error("Error handling request:", error);
-    if (error instanceof Error) {
-      console.error("Error message:", error.message);
-      console.error("Error stack:", error.stack);
-    }
     res.status(500).json({
       error: "Internal Server Error",
-      message:
-        error instanceof Error ? error.message : "Unknown error occurred",
+      message: error instanceof Error ? error.message : "Unknown error occurred",
     });
   }
 };
