@@ -7,6 +7,22 @@ import { Response } from "express";
 
 dotenv.config();
 
+console.log("Environment variables loaded");
+
+if (!process.env.SLACK_BOT_TOKEN) {
+  throw new Error("SLACK_BOT_TOKEN is not set");
+}
+
+if (!process.env.SLACK_SIGNING_SECRET) {
+  throw new Error("SLACK_SIGNING_SECRET is not set");
+}
+
+console.log("SLACK_BOT_TOKEN is set:", !!process.env.SLACK_BOT_TOKEN);
+console.log(
+  "SLACK_BOT_TOKEN prefix:",
+  process.env.SLACK_BOT_TOKEN?.substring(0, 5)
+);
+
 const receiver = new ExpressReceiver({
   signingSecret: process.env.SLACK_SIGNING_SECRET!,
   processBeforeResponse: true,
@@ -141,6 +157,7 @@ async function getUserGroups(username: string): Promise<string[] | null> {
 }
 
 app.command("/permissions", async ({ command, ack, respond }) => {
+  console.log("Received /permissions command");
   await ack();
   const username = command.text.trim();
 
@@ -196,10 +213,21 @@ function adaptResponse(res: VercelResponse): Response {
 
 export default async (req: VercelRequest, res: VercelResponse) => {
   try {
-    // await app.start();
+    await app.start();
+    console.log("Slack app started");
+    // Use the receiver directly
     await receiver.requestHandler(adaptRequest(req), adaptResponse(res));
+    console.log("Request handled successfully");
   } catch (error) {
     console.error("Error handling request:", error);
-    res.status(500).send("Internal Server Error");
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
+    res.status(500).json({
+      error: "Internal Server Error",
+      message:
+        error instanceof Error ? error.message : "Unknown error occurred",
+    });
   }
 };
