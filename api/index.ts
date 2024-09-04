@@ -116,6 +116,13 @@ app.command("/permissions", async ({ command, ack, respond, client }) => {
   await ack();
   console.log("Acknowledged command");
 
+  // Send initial loading message
+  const loadingMessage = await respond({
+    text: ":hourglass: Fetching permissions... This may take a moment.",
+    response_type: "ephemeral",
+  });
+  console.log("Sent loading message");
+
   const username = command.text.trim();
   console.log(`Processing command for username: ${username}`);
 
@@ -134,18 +141,42 @@ app.command("/permissions", async ({ command, ack, respond, client }) => {
       resultMessage = `User *${username}* not found.`;
     }
 
-    await respond({
-      text: resultMessage,
-      response_type: "ephemeral",
-    });
-    console.log("Sent result message");
+    // Update the loading message with the result
+    if (loadingMessage && loadingMessage.ts) {
+      await client.chat.update({
+        channel: command.channel_id,
+        ts: loadingMessage.ts,
+        text: resultMessage,
+      });
+      console.log("Updated message with result");
+    } else {
+      // Fallback to sending a new message if update fails
+      await respond({
+        text: resultMessage,
+        response_type: "ephemeral",
+      });
+      console.log("Sent result as new message");
+    }
   } catch (error) {
     console.error("Error in /permissions command:", error);
-    await respond({
-      text: "An error occurred while fetching user data.",
-      response_type: "ephemeral",
-    });
-    console.log("Sent error message");
+    const errorMessage = "An error occurred while fetching user data.";
+    
+    // Update the loading message with the error
+    if (loadingMessage && loadingMessage.ts) {
+      await client.chat.update({
+        channel: command.channel_id,
+        ts: loadingMessage.ts,
+        text: errorMessage,
+      });
+      console.log("Updated message with error");
+    } else {
+      // Fallback to sending a new error message
+      await respond({
+        text: errorMessage,
+        response_type: "ephemeral",
+      });
+      console.log("Sent error as new message");
+    }
   }
 });
 
@@ -169,6 +200,10 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     console.log("Request handled successfully");
   } catch (error) {
     console.error("Error handling request:", error);
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
     res.status(500).json({
       error: "Internal Server Error",
       message:
