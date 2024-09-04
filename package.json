@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/api/index.js",
-    "dev": "ts-node api/index.ts"
+    "start": "vercel dev",
+    "deploy": "vercel --prod"
   },
   "keywords": [],
   "author": "",
