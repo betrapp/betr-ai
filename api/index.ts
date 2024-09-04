@@ -171,7 +171,8 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     console.error("Error handling request:", error);
     res.status(500).json({
       error: "Internal Server Error",
-      message: error instanceof Error ? error.message : "Unknown error occurred",
+      message:
+        error instanceof Error ? error.message : "Unknown error occurred",
     });
   }
 };

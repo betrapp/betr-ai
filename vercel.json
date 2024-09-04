@@ -3,6 +3,9 @@
   "functions": {
     "api/*.ts": {
       "runtime": "@vercel/node@2.0.0"
+    },
+    "api/index.ts": {
+      "maxDuration": 60
     }
   },
   "routes": [
