@@ -8,7 +8,6 @@
     "start": "vercel dev",
     "deploy": "vercel --prod",
     "dev": "ts-node api/index.ts",
-    "vercel-build": "prisma generate && next build",
     "postinstall": "prisma generate"
   },
   "keywords": [],
