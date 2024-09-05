@@ -41,7 +41,7 @@ interface User {
   groups: string[];
 }
 
-interface UsersResponse {
+export interface UsersResponse {
   data: {
     [key: string]: User;
   };
@@ -50,7 +50,7 @@ interface UsersResponse {
 let authToken: string | null = null;
 let tokenExpiration: number | null = null;
 
-async function getAuthToken(): Promise<string> {
+export async function getAuthToken(): Promise<string> {
   if (authToken && tokenExpiration && tokenExpiration > Date.now()) {
     return authToken;
   }
@@ -91,7 +91,9 @@ async function getAuthToken(): Promise<string> {
   }
 }
 
-async function getUserGroups(username: string): Promise<string[] | null> {
+export async function getUserGroups(
+  username: string
+): Promise<string[] | null> {
   try {
     const token = await getAuthToken();
     console.log("Token:", token);
@@ -118,7 +120,7 @@ async function getUserGroups(username: string): Promise<string[] | null> {
   }
 }
 
-async function updateUserGroupsInDB(username: string, groups: string[]) {
+export async function updateUserGroupsInDB(username: string, groups: string[]) {
   await prisma.user.upsert({
     where: { username: username },
     update: {
@@ -138,31 +140,6 @@ async function getUserGroupsFromDB(username: string): Promise<string[] | null> {
   });
   return user?.groups || null;
 }
-
-// Cron job to update all user groups daily
-cron.schedule("0 0 * * *", async () => {
-  console.log("Running daily user group update");
-  try {
-    const token = await getAuthToken();
-    const response = await axios.get<UsersResponse>(
-      `${process.env.API_BASE_URL}/admin/users`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      }
-    );
-
-    for (const [username, user] of Object.entries(response.data.data)) {
-      await updateUserGroupsInDB(username, user.groups);
-    }
-    console.log("Daily user group update completed");
-  } catch (error) {
-    console.error("Error updating user groups:", error);
-  }
-});
 
 // Modified Slack command to use the database
 app.command("/permissions", async ({ command, ack, respond, client }) => {
@@ -220,11 +197,8 @@ app.command("/permissions", async ({ command, ack, respond, client }) => {
   }
 });
 
-// Export the serverless function
 export default async (req: VercelRequest, res: VercelResponse) => {
   console.log("Received request:", req.method, req.url);
-
-  // res.status(200).send("Processing request");
 
   if (req.method === "GET") {
     res.status(200).send("Server is running");
