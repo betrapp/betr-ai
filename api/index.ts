@@ -2,7 +2,6 @@ import { App, ExpressReceiver } from "@slack/bolt";
 import axios from "axios";
 import dotenv from "dotenv";
 import { VercelRequest, VercelResponse } from "@vercel/node";
-import cron from "node-cron";
 import { PrismaClient } from "@prisma/client";
 
 dotenv.config();
