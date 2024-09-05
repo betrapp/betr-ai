@@ -3,12 +3,15 @@
     "target": "ES2018",
     "module": "commonjs",
     "outDir": "./dist",
-    "rootDir": "api",
+    "rootDir": "./",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["api/**/*"],
+  "include": [
+    "src/**/*",
+    "api/**/*"
+  ],
   "exclude": ["node_modules"]
 }

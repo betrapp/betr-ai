@@ -1,8 +1,11 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
 import axios from "axios";
 import { PrismaClient } from "@prisma/client";
-import { getAuthToken, updateUserGroupsInDB, UsersResponse } from "./index"; // Adjust path as necessary
-
+import {
+  updateUserGroupsInDB,
+  UsersResponse,
+} from "../src/services/userService"; // Adjust path as necessary
+import { getAuthToken } from "../src/services/authService"; // Adjust path as necessary
 const prisma = new PrismaClient();
 
 export default async function scheduledUserGroupsUpdate(
