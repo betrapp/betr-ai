@@ -224,7 +224,7 @@ app.command("/permissions", async ({ command, ack, respond, client }) => {
 export default async (req: VercelRequest, res: VercelResponse) => {
   console.log("Received request:", req.method, req.url);
 
-  res.status(200).send("Processing request");
+  // res.status(200).send("Processing request");
 
   if (req.method === "GET") {
     res.status(200).send("Server is running");
