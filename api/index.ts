@@ -181,6 +181,7 @@ app.command("/permissions", async ({ command, ack, respond, client }) => {
       text: resultMessage,
       thread_ts: command.ts,
       response_type: "ephemeral",
+      user: command.user_id,
     });
     console.log("Sent result message");
   } catch (error) {
@@ -192,6 +193,7 @@ app.command("/permissions", async ({ command, ack, respond, client }) => {
       text: errorMessage,
       thread_ts: command.ts,
       response_type: "ephemeral",
+      user: command.user_id,
     });
     console.log("Sent error message");
   }
