@@ -4,6 +4,10 @@
     {
       "src": "api/index.ts",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/cron.ts",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
