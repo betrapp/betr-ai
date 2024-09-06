@@ -3,6 +3,11 @@ import { VercelRequest, VercelResponse } from "@vercel/node";
 import { PrismaClient } from "@prisma/client";
 import { getAllUserGroups } from "../src/services/userService";
 
+// Set the maximum duration for this function
+export const config = {
+  maxDuration: 30,
+};
+
 const prisma = new PrismaClient();
 
 async function updateAllUserGroups() {
@@ -29,6 +34,7 @@ async function updateAllUserGroups() {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === "POST") {
     console.log("Cron job started");
+    res.status(200).json({ message: "Cron job initiated successfully" });
     await updateAllUserGroups();
     console.log("Cron job completed");
     res.status(200).json({ message: "Cron job completed successfully" });

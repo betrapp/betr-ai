@@ -19,10 +19,5 @@
       "path": "/api/cron",
       "schedule": "0 0 * * *"
     }
-  ],
-  "functions": {
-    "/api/cron.ts": {
-      "maxDuration": 30
-    }
-  }
+  ]
 }
