@@ -7,7 +7,7 @@
     }
   ],
   "routes": [
-    { "src": "/api/cron", "methods": ["POST"], "dest": "/api/index.ts" },
+    { "src": "/api/cron", "methods": ["POST"], "dest": "/api/cron.ts" },
     { "src": "/(.*)", "dest": "/api/index.ts" }
   ],
   "crons": [
