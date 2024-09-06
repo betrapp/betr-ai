@@ -26,7 +26,7 @@ async function updateAllUserGroups() {
   }
 }
 
-export default async function POST(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === "POST") {
     console.log("Cron job started");
     await updateAllUserGroups();
