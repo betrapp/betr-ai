@@ -25,14 +25,6 @@ export async function handlePermissionsCommand({
 
     let groups = await getUserGroupsFromDB(username);
 
-    if (!groups) {
-      // If not in DB, fetch from API and update DB
-      groups = await getUserGroups(username);
-      if (groups) {
-        await updateUserGroupsInDB(username, groups);
-      }
-    }
-
     let resultMessage;
     if (groups && groups.length > 0) {
       resultMessage = `User *${username}* belongs to the following groups:\n\`\`\`\n${groups.join(
