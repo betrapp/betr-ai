@@ -73,3 +73,31 @@ export async function getUserGroupsFromDB(
   });
   return user?.groups || null;
 }
+
+export async function getAllUserGroups(): Promise<
+  { user: string; groups: string[] }[]
+> {
+  try {
+    const token = await getAuthToken();
+    console.log("Token:", token);
+    const response = await axios.get<UsersResponse>(
+      `${process.env.API_BASE_URL}/admin/users`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      }
+    );
+    const users = response.data.data;
+    console.log("Users:", users);
+    return Object.keys(users).map((username) => ({
+      user: username,
+      groups: users[username].groups,
+    }));
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+    throw error;
+  }
+}
