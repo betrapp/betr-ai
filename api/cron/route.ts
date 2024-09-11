@@ -1,7 +1,7 @@
 // api/cron.ts
 import { VercelRequest, VercelResponse } from "@vercel/node";
 import { PrismaClient } from "@prisma/client";
-import { getAllUserGroups } from "../src/services/userService";
+import { getAllUserGroups } from "../../src/services/userService";
 
 // Set the maximum duration for this function
 export const config = {
@@ -31,14 +31,25 @@ async function updateAllUserGroups() {
   }
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method === "POST") {
+export default async function handler(
+  request: VercelRequest,
+  response: VercelResponse
+) {
+  const authHeader = request.headers.authorization || "";
+  if (
+    !process.env.CRON_SECRET ||
+    authHeader !== `Bearer ${process.env.CRON_SECRET}`
+  ) {
+    return response.status(401).json({ success: false });
+  }
+
+  try {
     console.log("Cron job started");
-    res.status(200).json({ message: "Cron job initiated successfully" });
+    response.status(200).json({ message: "Cron job initiated successfully" });
     await updateAllUserGroups();
     console.log("Cron job completed");
-    res.status(200).json({ message: "Cron job completed successfully" });
-  } else {
-    res.status(405).json({ error: "Method not allowed" });
+    response.status(200).json({ message: "Cron job completed successfully" });
+  } catch (error) {
+    response.status(405).json({ error: "Method not allowed" });
   }
 }
