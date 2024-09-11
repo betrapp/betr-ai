@@ -6,18 +6,18 @@
       "use": "@vercel/node"
     },
     {
-      "src": "api/cron/route.ts",
+      "src": "api/cron/index.ts",
       "use": "@vercel/node"
     }
   ],
   "routes": [
-    { "src": "/api/cron", "methods": ["GET"], "dest": "/api/cron/route.ts" },
-    { "src": "/api/cron/route.ts", "dest": "/api/cron/route.ts" },
+    { "src": "/api/cron", "methods": ["GET"], "dest": "/api/cron/index.ts" },
+    { "src": "/api/cron/index.ts", "dest": "/api/cron/index.ts" },
     { "src": "/(.*)", "dest": "/api/index.ts" }
   ],
   "crons": [
     {
-      "path": "/api/cron/route.ts",
+      "path": "/api/cron/index.ts",
       "schedule": "* * * * *"
     }
   ]
