@@ -1,9 +1,7 @@
-// api/cron.ts
 import { VercelRequest, VercelResponse } from "@vercel/node";
 import { PrismaClient } from "@prisma/client";
 import { getAllUserGroups } from "../../src/services/userService";
 
-// Set the maximum duration for this function
 export const config = {
   maxDuration: 30,
 };
@@ -14,14 +12,30 @@ async function updateAllUserGroups() {
   try {
     const userGroups = await getAllUserGroups();
     for (const { user, groups } of userGroups) {
-      await prisma.user.update({
-        where: { username: user },
-        data: {
-          groups: {
-            set: groups,
+      try {
+        await prisma.user.update({
+          where: { username: user },
+          data: {
+            groups: {
+              set: groups,
+            },
           },
-        },
-      });
+        });
+      } catch (updateError: any) {
+        if (updateError.code === "P2025") {
+          console.log(`User ${user} not found, creating new user`);
+          await prisma.user.create({
+            data: {
+              username: user,
+              groups: {
+                set: groups,
+              },
+            },
+          });
+        } else {
+          throw updateError;
+        }
+      }
     }
     console.log("All user groups updated");
   } catch (error) {
