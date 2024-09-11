@@ -31,7 +31,7 @@ async function updateAllUserGroups() {
   }
 }
 
-export default async function handler(
+export default async function POST(
   request: VercelRequest,
   response: VercelResponse
 ) {
@@ -45,7 +45,6 @@ export default async function handler(
 
   try {
     console.log("Cron job started");
-    response.status(200).json({ message: "Cron job initiated successfully" });
     await updateAllUserGroups();
     console.log("Cron job completed");
     response.status(200).json({ message: "Cron job completed successfully" });
