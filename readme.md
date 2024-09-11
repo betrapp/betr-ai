@@ -16,16 +16,16 @@ api/
   ├── cron/
   │   ├── index.ts              # Entry point for the cron job
   │   └── updateUserGroups.ts    # Logic for updating user groups in the DB
-  ├── prisma/
-  │   └── schema.prisma          # Prisma schema for DB models
-  ├── src/
-  │   ├── config/
-  │   │   └── slackConfig.ts     # Slack app configuration
-  │   ├── handlers/
-  │   │   └── permissionsHandler.ts  # Handles /permissions Slack command
-  │   ├── services/
-  │   │   ├── authService.ts     # Auth related logic for API
-  │   │   └── userService.ts     # Services for fetching and updating user groups
+prisma/
+  └── schema.prisma          # Prisma schema for DB models
+src/
+  ├── config/
+  │   └── slackConfig.ts     # Slack app configuration
+  ├── handlers/
+  │   └── permissionsHandler.ts  # Handles /permissions Slack command
+  ├── services/
+  │   ├── authService.ts     # Auth related logic for API
+  │   └── userService.ts     # Services for fetching and updating user groups
 
 
 .env                    # Environment variables (excluded from version control)
