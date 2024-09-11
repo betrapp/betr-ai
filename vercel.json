@@ -6,13 +6,9 @@
       "use": "@vercel/node"
     },
     {
-      "src": "api/cron.ts",
+      "src": "api/cron/route.ts",
       "use": "@vercel/node"
     }
-  ],
-  "routes": [
-    { "src": "/api/cron", "methods": ["POST"], "dest": "/api/cron.ts" },
-    { "src": "/(.*)", "dest": "/api/index.ts" }
   ],
   "crons": [
     {
