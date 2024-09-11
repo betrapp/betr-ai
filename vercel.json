@@ -10,6 +10,10 @@
       "use": "@vercel/node"
     }
   ],
+  "routes": [
+    { "src": "/api/cron", "methods": ["POST"], "dest": "/api/cron/route.ts" },
+    { "src": "/(.*)", "dest": "/api/index.ts" }
+  ],
   "crons": [
     {
       "path": "/api/cron",
