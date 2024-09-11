@@ -1,6 +1,6 @@
 ---
 
-# Slack Permissions Bot
+# Slack BO Betr Bot
 
 This project is a Slack bot built with [Bolt for JavaScript](https://slack.dev/bolt-js) and deployed on Vercel. It provides a `/permissions` Slack command to fetch user group permissions from a PostgreSQL database, using Prisma as the ORM. The project includes a daily cron job that updates the database to avoid API timeouts.
 
