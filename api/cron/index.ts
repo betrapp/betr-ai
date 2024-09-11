@@ -31,7 +31,7 @@ async function updateAllUserGroups() {
   }
 }
 
-export default async function POST(
+export default async function GET(
   request: VercelRequest,
   response: VercelResponse
 ) {
